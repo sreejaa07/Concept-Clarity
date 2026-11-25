@@ -1,0 +1,678 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Concept Clarity</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+
+  <body>
+
+    <!-- M4: star canvas background -->
+    <canvas id="starCanvas"></canvas>
+
+    <!-- M4: cursor glow -->
+    <div class="cursor-glow" id="cursorGlow"></div>
+
+    <!-- ── LANGUAGE MODAL ────────────────────────────────────── -->
+    <div id="languageModal" class="modal-overlay" onclick="closeModal('languageModal', event)">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title">Select Language</h2>
+          <button class="modal-close" onclick="closeModal('languageModal')">&times;</button>
+        </div>
+        <div class="options-grid" id="languageOptionsGrid">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ── DIFFICULTY MODAL ──────────────────────────────────── -->
+    <div id="difficultyModal" class="modal-overlay" onclick="closeModal('difficultyModal', event)">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title">Select Difficulty</h2>
+          <button class="modal-close" onclick="closeModal('difficultyModal')">&times;</button>
+        </div>
+        <div class="options-grid">
+          <button class="option-btn" onclick="selectOption('difficulty', 'simple', 'Simple')">
+            <span>🔹</span> Simple Level
+          </button>
+          <button class="option-btn active" onclick="selectOption('difficulty', 'advanced', 'Advanced')">
+            <span>🔥</span> Advance Level
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="outer-container">
+      <div class="card">
+        <h1 class="title">Concept Clarity</h1>
+
+        <!-- ── INPUT AREA ─────────────────────────────────────────── -->
+        <div class="input-container">
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Enter scientific term..."
+            required
+          />
+
+          <div class="controls-row">
+            <!-- Premium Language Selector -->
+            <div class="custom-selector" onclick="openModal('languageModal')">
+              <span id="languageLabel">English</span>
+              <span class="selector-icon">▼</span>
+            </div>
+            <select id="languageSelect" style="display:none">
+              <option value="en" selected>English</option>
+              <option value="es">Spanish</option>
+              <option value="fr">French</option>
+              <option value="de">German</option>
+              <option value="it">Italian</option>
+              <option value="pt">Portuguese</option>
+              <option value="ru">Russian</option>
+              <option value="zh">Chinese</option>
+              <option value="ja">Japanese</option>
+              <option value="ko">Korean</option>
+              <option value="hi">Hindi (हिन्दी)</option>
+              <option value="bn">Bengali (বাংলা)</option>
+              <option value="te">Telugu (తెలుగు)</option>
+              <option value="mr">Marathi (मराठी)</option>
+              <option value="ta">Tamil (தமிழ்)</option>
+              <option value="ur">Urdu (اردو)</option>
+              <option value="gu">Gujarati (ગુજરાતી)</option>
+              <option value="kn">Kannada (ಕನ್ನಡ)</option>
+              <option value="or">Odia (ଓଡ଼ିଆ)</option>
+              <option value="ml">Malayalam (മലയാളം)</option>
+              <option value="pa">Punjabi (ਪੰਜਾਬੀ)</option>
+            </select>
+
+            <!-- Premium Difficulty Selector -->
+            <div class="custom-selector" onclick="openModal('difficultyModal')">
+              <span id="difficultyLabel">Advanced</span>
+              <span class="selector-icon">▼</span>
+            </div>
+            <select id="difficultySelect" style="display:none">
+              <option value="simple">Simple</option>
+              <option value="advanced" selected>Advanced</option>
+            </select>
+
+            <button id="explainBtn" onclick="getExplanation()">Explain</button>
+            <button id="saveBtn" onclick="saveExplanation()">Save</button>
+          </div>
+        </div>
+
+        <!-- ── RESPONSE CARD ──────────────────────────────────────── -->
+        <div id="explanationCard" class="response-box" style="display: none">
+          <h4 id="resultTitle"></h4>
+          <p id="resultText"></p>
+
+          <div id="exampleSection" class="example-section" style="display: none">
+            <h5 class="example-title">Real-Life Example</h5>
+            <p id="exampleText"></p>
+          </div>
+
+          <div id="relatedTerms" class="related-terms" style="display: none"></div>
+
+          <!-- ── RESOURCES + QUIZ ───────────────────────────────── -->
+          <div id="resourcesSection" class="resources-section" style="display: none">
+
+            <div style="margin-top:15px;">
+              <button id="quizBtn" onclick="showQuiz()" class="quiz-btn">
+                🧠 Take Quick Quiz
+              </button>
+            </div>
+
+            <div id="quizSection" style="display:none; margin-top:10px;">
+              <h5 class="quiz-title">Quick Quiz</h5>
+
+              <div class="quiz-progress">
+                <div id="quizProgressBar"></div>
+              </div>
+
+              <div id="quizQuestionArea">
+                <p id="quizQuestion"></p>
+                <div id="quizOptions"></div>
+                
+                <div id="relatedConceptsArea" style="margin-top:15px; display:none;">
+                  <span style="font-size: 11px; color:#00f2ff; opacity:0.8; text-transform:uppercase;">Related Concepts:</span>
+                  <div id="quizRelatedChips" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:5px;"></div>
+                </div>
+              </div>
+
+              <p id="quizResult" style="font-weight:bold;"></p>
+              
+              <div id="advancedAnalytics" style="display:none; margin-top:20px; padding:15px; border-radius:10px; background:rgba(124,77,255,0.06); border:1px solid rgba(124,77,255,0.2);">
+                <h6 style="color:#7c4dff; font-family:'Orbitron'; font-size:12px; margin-bottom:10px;">ANALYTICS</h6>
+                <div id="analyticsContent" style="font-size:13px; color:#cbd5e1;"></div>
+              </div>
+            </div>
+
+            <h5 class="resources-title">📚 Further Learning Resources</h5>
+            <div id="resourceLinks" class="resource-links"></div>
+          </div>
+
+          <div id="translationSection" style="margin-top:30px; text-align:center; display:none;">
+            <button id="translateToEnBtn" onclick="translateToEnglish()" class="translate-btn">
+              🌐 Translate to English
+            </button>
+          </div>
+
+          <!-- ── SEARCH HISTORY ─────────────────────────────────── -->
+          <div id="historySection" class="history-bottom">
+            <div class="history-header">
+              <h4>Recent Searches</h4>
+              <button id="clearHistoryBtn" class="clear-history">Clear</button>
+            </div>
+            <ul id="historyList"></ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <script>
+      /* ============================================================
+         M4: Canvas star field
+         ============================================================ */
+      (function () {
+        const canvas = document.getElementById('starCanvas');
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+
+        function resize() {
+          canvas.width  = window.innerWidth;
+          canvas.height = window.innerHeight;
+        }
+
+        function initStars(count) {
+          stars = [];
+          for (let i = 0; i < count; i++) {
+            stars.push({
+              x: Math.random() * canvas.width,
+              y: Math.random() * canvas.height,
+              r: Math.random() * 1.2 + 0.2,
+              a: Math.random(),
+              speed: Math.random() * 0.004 + 0.001,
+            });
+          }
+        }
+
+        function drawStars() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          stars.forEach(s => {
+            s.a += s.speed;
+            const alpha = (Math.sin(s.a) + 1) / 2;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(0, 242, 255, ${alpha * 0.7})`;
+            ctx.fill();
+          });
+          requestAnimationFrame(drawStars);
+        }
+
+        resize();
+        initStars(180);
+        drawStars();
+        window.addEventListener('resize', () => { resize(); initStars(180); });
+      })();
+
+      /* ============================================================
+         M4: Cursor glow follow
+         ============================================================ */
+      (function () {
+        const glow = document.getElementById('cursorGlow');
+        document.addEventListener('mousemove', e => {
+          glow.style.left = e.clientX + 'px';
+          glow.style.top  = e.clientY + 'px';
+        });
+      })();
+
+      /* ============================================================
+         TARUN – core explanation engine (unchanged)
+         ============================================================ */
+      let latestData = null;
+
+      async function getExplanation(termOverride = null) {
+        const searchInput     = document.getElementById("searchInput");
+        const languageSelect  = document.getElementById("languageSelect");
+        const term            = (termOverride ?? searchInput.value).trim();
+        const language        = languageSelect.value;
+
+        const explanationCard  = document.getElementById("explanationCard");
+        const resultTitle      = document.getElementById("resultTitle");
+        const resultText       = document.getElementById("resultText");
+        const exampleSection   = document.getElementById("exampleSection");
+        const exampleText      = document.getElementById("exampleText");
+        const relatedTerms     = document.getElementById("relatedTerms");
+        const resourcesSection = document.getElementById("resourcesSection");
+        const resourceLinks    = document.getElementById("resourceLinks");
+
+        if (termOverride === null && term) {
+          saveHistory(term, language);
+        }
+
+        if (!term) {
+          explanationCard.style.display  = "block";
+          resultTitle.innerText          = "Input required";
+          resultText.innerText           = "Please enter a scientific term.";
+          exampleSection.style.display   = "none";
+          exampleText.innerText          = "";
+          relatedTerms.style.display     = "none";
+          relatedTerms.innerHTML         = "";
+          resourcesSection.style.display = "none";
+          resourceLinks.innerHTML        = "";
+          return;
+        }
+
+        try {
+          explanationCard.style.display  = "block";
+          resultTitle.innerHTML =
+            '<div class="loading"></div><span class="loading-text">Analyzing concept...</span>';
+          resultText.innerText           = "Fetching explanation from multiple sources...";
+          exampleSection.style.display   = "none";
+          exampleText.innerText          = "";
+          relatedTerms.style.display     = "none";
+          relatedTerms.innerHTML         = "";
+          resourcesSection.style.display = "none";
+          resourceLinks.innerHTML        = "";
+          
+          const quizSection = document.getElementById("quizSection");
+          if (quizSection) quizSection.style.display = "none";
+          latestData = null;
+
+          const difficultySelect = document.getElementById("difficultySelect");
+          const difficulty       = difficultySelect ? difficultySelect.value : "advanced";
+
+          const response = await fetch("/api/explain", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ term: term, language: language, difficulty: difficulty }),
+          });
+
+          const data = await response.json();
+          latestData = data;
+
+          if (!response.ok) {
+            throw new Error(data.error || "Failed to get explanation");
+          }
+
+          explanationCard.style.display = "block";
+
+          searchInput.value      = data.term || term;
+          resultTitle.innerText  = data.term || term;
+          resultText.innerText   = data.explanation || "No explanation available.";
+
+          if (data.real_life_example) {
+            exampleSection.style.display = "block";
+            const cleanedExample = String(data.real_life_example)
+              .replace(/^real[-\s]?life example:\s*/i, "")
+              .trim();
+            exampleText.innerText = cleanedExample || data.real_life_example;
+          } else {
+            exampleSection.style.display = "none";
+            exampleText.innerText        = "";
+          }
+
+          relatedTerms.innerHTML = "";
+          if (Array.isArray(data.related_terms) && data.related_terms.length > 0) {
+            data.related_terms.forEach((relatedTerm) => {
+              if (!relatedTerm) return;
+              const chip = document.createElement("button");
+              chip.type      = "button";
+              chip.className = "related-chip";
+              chip.innerText = relatedTerm;
+              chip.onclick   = () => getExplanation(relatedTerm);
+              relatedTerms.appendChild(chip);
+            });
+            relatedTerms.style.display = "flex";
+          } else {
+            relatedTerms.style.display = "none";
+          }
+
+          if (Array.isArray(data.resources) && data.resources.length > 0) {
+            data.resources.forEach(({ name, url, icon }) => {
+              const a = document.createElement("a");
+              a.href      = url;
+              a.target    = "_blank";
+              a.rel       = "noopener noreferrer";
+              a.className = "resource-link";
+              a.innerHTML = `<span>${icon}</span><span>${name}</span>`;
+              resourceLinks.appendChild(a);
+            });
+            resourcesSection.style.display = "block";
+          } else {
+            resourcesSection.style.display = "none";
+          }
+
+          // M4: Localization & Translation logic
+          const ui = data.ui || {};
+          const translationSection = document.getElementById("translationSection");
+          const translateBtn = document.getElementById("translateToEnBtn");
+          
+          if (language !== 'en') {
+            translationSection.style.display = "block";
+            translateBtn.innerText = ui.ui_translate_to_en || "Translate to English";
+          } else {
+            translationSection.style.display = "none";
+          }
+
+          // Update localized labels
+          if (ui.ui_real_life_example) document.querySelector(".example-title").innerText = ui.ui_real_life_example;
+          if (ui.ui_quick_quiz) document.getElementById("quizBtn").innerText = "🧠 " + ui.ui_quick_quiz;
+          if (ui.ui_further_learning) document.querySelector(".resources-title").innerText = ui.ui_further_learning;
+          
+        } catch (error) {
+          explanationCard.style.display  = "block";
+          resultTitle.innerText          = "Error";
+          resultText.innerText           = error.message || "Unexpected error occurred.";
+          exampleSection.style.display   = "none";
+          exampleText.innerText          = "";
+          relatedTerms.style.display     = "none";
+          relatedTerms.innerHTML         = "";
+          resourcesSection.style.display = "none";
+          resourceLinks.innerHTML        = "";
+        }
+      }
+
+      async function translateToEnglish() {
+        if (!latestData || !latestData.term) return;
+        
+        // Sync the selectors to English
+        const select = document.getElementById("languageSelect");
+        const label = document.getElementById("languageLabel");
+        select.value = "en";
+        label.innerText = "English";
+        
+        // Update the grid active state
+        initLanguageGrid();
+        
+        // Fetch in English
+        document.getElementById("translationSection").style.display = "none";
+        getExplanation(latestData.term);
+      }
+
+      /* ============================================================
+         M4: Premium Modal Logic
+         ============================================================ */
+      function openModal(modalId) {
+        document.getElementById(modalId).classList.add('active');
+        // Initial active state for difficulty
+        if (modalId === 'difficultyModal') {
+          const val = document.getElementById('difficultySelect').value;
+          const label = val.charAt(0).toUpperCase() + val.slice(1);
+          const grid = document.querySelector('#difficultyModal .options-grid');
+          grid.querySelectorAll('.option-btn').forEach(btn => {
+            if (btn.innerText.includes(label)) btn.classList.add('active');
+            else btn.classList.remove('active');
+          });
+        }
+      }
+
+      function closeModal(modalId, event = null) {
+        if (event && event.target !== document.getElementById(modalId) && !event.target.classList.contains('modal-close')) return;
+        document.getElementById(modalId).classList.remove('active');
+      }
+
+      function selectOption(type, value, label) {
+        const select = document.getElementById(type + "Select");
+        const displayLabel = document.getElementById(type + "Label");
+        
+        select.value = value;
+        displayLabel.innerText = label;
+        
+        // Update active state in UI
+        const grid = (type === 'language') ? document.getElementById('languageOptionsGrid') : document.querySelector('#difficultyModal .options-grid');
+        const buttons = grid.querySelectorAll('.option-btn');
+        buttons.forEach(btn => {
+          if (btn.innerText.includes(label)) btn.classList.add('active');
+          else btn.classList.remove('active');
+        });
+
+        setTimeout(() => closeModal(type + 'Modal'), 150);
+      }
+
+      function initLanguageGrid() {
+        const grid = document.getElementById('languageOptionsGrid');
+        const select = document.getElementById('languageSelect');
+        const options = select.querySelectorAll('option');
+        
+        const icons = {
+          en: "🇺🇸", es: "🇪🇸", fr: "🇫🇷", de: "🇩🇪", it: "🇮🇹", pt: "🇵🇹", 
+          ru: "🇷🇺", zh: "🇨🇳", ja: "🇯🇵", ko: "🇰🇷", hi: "🇮🇳", bn: "🇮🇳", 
+          te: "🇮🇳", mr: "🇮🇳", ta: "🇮🇳", ur: "🇵🇰", gu: "🇮🇳", kn: "🇮🇳", 
+          or: "🇮🇳", ml: "🇮🇳", pa: "🇮🇳"
+        };
+        
+        grid.innerHTML = "";
+        options.forEach(opt => {
+          const btn = document.createElement('button');
+          btn.className = 'option-btn' + (opt.selected ? ' active' : '');
+          const flag = icons[opt.value] || "🌐";
+          btn.innerHTML = `<span>${flag}</span> ${opt.text}`;
+          btn.onclick = () => selectOption('language', opt.value, opt.text);
+          grid.appendChild(btn);
+        });
+      }
+
+      window.addEventListener('DOMContentLoaded', initLanguageGrid);
+
+      document.getElementById("searchInput").addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          getExplanation();
+        }
+      });
+
+      /* ============================================================
+         TARUN – Quiz (unchanged)
+         ============================================================ */
+      let currentQuestion = 0;
+      let score = 0;
+
+      function showQuiz() {
+        const quizSection  = document.getElementById("quizSection");
+        const quizQuestion = document.getElementById("quizQuestion");
+        const quizOptions  = document.getElementById("quizOptions");
+        const quizResult   = document.getElementById("quizResult");
+
+        quizSection.style.display = "block";
+        document.getElementById("quizQuestionArea").style.display = "block";
+        document.getElementById("advancedAnalytics").style.display = "none";
+
+        if (!latestData || !latestData.quiz) {
+          quizQuestion.innerText = "Quiz not available.";
+          return;
+        }
+
+        const questions = latestData.quiz.questions;
+
+        function loadQuestion() {
+          quizOptions.innerHTML = "";
+          quizResult.innerText  = "";
+
+          const q = questions[currentQuestion];
+
+          document.getElementById("quizProgressBar").style.width =
+            ((currentQuestion) / questions.length) * 100 + "%";
+
+          quizQuestion.innerText = `Q${currentQuestion + 1}. ${q.question}`;
+          
+          const relatedArea = document.getElementById("relatedConceptsArea");
+          const relatedChips = document.getElementById("quizRelatedChips");
+          relatedChips.innerHTML = "";
+          if (q.related_concepts && q.related_concepts.length > 0) {
+            relatedArea.style.display = "block";
+            q.related_concepts.forEach(concept => {
+              const chip = document.createElement("span");
+              chip.className = "related-chip";
+              chip.style.fontSize = "11px";
+              chip.style.padding = "4px 10px";
+              chip.innerText = concept;
+              relatedChips.appendChild(chip);
+            });
+          } else {
+            relatedArea.style.display = "none";
+          }
+
+          q.options.forEach((option) => {
+            const btn       = document.createElement("button");
+            btn.className   = "quiz-option";
+            btn.innerText   = option;
+
+            btn.onclick = () => {
+              const allButtons = quizOptions.querySelectorAll("button");
+              allButtons.forEach((b) => (b.disabled = true));
+
+              if (option === q.answer) {
+                score++;
+                btn.classList.add("correct");
+                quizResult.innerHTML = `✅ <strong>Correct!</strong><br><span style="font-size: 0.9em; font-weight: normal;">${q.explanation || ""}</span>`;
+                quizResult.style.color  = "#10b981";
+              } else {
+                btn.classList.add("wrong");
+                allButtons.forEach((b) => {
+                  if (b.innerText === q.answer) b.classList.add("correct");
+                });
+                quizResult.innerHTML = `❌ <strong>Incorrect</strong><br><span style="font-size: 0.9em; font-weight: normal;">${q.explanation || ""}</span>`;
+                quizResult.style.color  = "#ef4444";
+              }
+
+              // Add a "Next" button instead of auto-skipping too fast
+              const nextBtn = document.createElement("button");
+              nextBtn.innerText = currentQuestion + 1 < questions.length ? "Next Question →" : "Finish Quiz";
+              nextBtn.className = "quiz-btn";
+              nextBtn.style.marginTop = "15px";
+              nextBtn.onclick = () => {
+                currentQuestion++;
+                if (currentQuestion < questions.length) {
+                  loadQuestion();
+                } else {
+                  document.getElementById("quizQuestionArea").style.display = "none";
+                  quizQuestion.innerText = "🎉 Quiz Completed";
+                  quizOptions.innerHTML  = "";
+                  quizResult.innerHTML   = `Your Score: <strong>${score} / ${questions.length}</strong>`;
+                  
+                  if (latestData.quiz.advanced_analytics) {
+                    const analytics = document.getElementById("advancedAnalytics");
+                    const content = document.getElementById("analyticsContent");
+                    analytics.style.display = "block";
+                    const aa = latestData.quiz.advanced_analytics;
+                    content.innerHTML = `
+                      <p><strong>Difficulty:</strong> ${aa.difficulty}</p>
+                      <p style="margin-top:5px;"><strong>Suggested Reading:</strong></p>
+                      <ul style="margin-left:20px; margin-top:5px;">
+                        ${aa.suggested_reading.map(r => `<li>${r}</li>`).join('')}
+                      </ul>
+                    `;
+                  }
+                  
+                  document.getElementById("quizProgressBar").style.width = "100%";
+                  nextBtn.remove();
+                }
+              };
+              quizResult.appendChild(document.createElement("br"));
+              quizResult.appendChild(nextBtn);
+            };
+
+            quizOptions.appendChild(btn);
+          });
+          
+          // Update localized labels for finish/next buttons
+          const ui = latestData.ui || {};
+          const updateQuizButtons = () => {
+            const quizBtns = document.querySelectorAll("#quizSection .quiz-btn");
+            quizBtns.forEach(btn => {
+              if (btn.innerText.includes("Finish")) btn.innerText = ui.ui_finish || "Finish Quiz";
+              if (btn.innerText.includes("Next")) btn.innerText = ui.ui_next || "Next Question →";
+            });
+          };
+          updateQuizButtons();
+        }
+
+        currentQuestion = 0;
+        score           = 0;
+        loadQuestion();
+      }
+
+      /* ============================================================
+         JOUSHA – Search History (unchanged)
+         ============================================================ */
+      function saveHistory(term, language) {
+        let history = JSON.parse(localStorage.getItem("cc_history")) || [];
+        const time  = new Date().toLocaleTimeString();
+
+        if (history.length > 0 && history[0].term === term) return;
+
+        history.unshift({ term: term, language: language || "en", time: time });
+        history = history.slice(0, 10);
+
+        localStorage.setItem("cc_history", JSON.stringify(history));
+        renderHistory();
+      }
+
+      function renderHistory() {
+        const list = document.getElementById("historyList");
+        if (!list) return;
+
+        const history = JSON.parse(localStorage.getItem("cc_history")) || [];
+        list.innerHTML = "";
+
+        if (history.length === 0) {
+          const empty    = document.createElement("li");
+          empty.style.cursor = "default";
+          empty.style.color  = "#475569";
+          empty.textContent  = "No recent searches yet.";
+          list.appendChild(empty);
+          return;
+        }
+
+        history.forEach((item) => {
+          const li = document.createElement("li");
+          li.innerHTML  = `<strong>${item.term}</strong> <span style="font-size:12px;color:#475569;">(${item.time})</span>`;
+          li.onclick    = () => {
+            document.getElementById("searchInput").value = item.term;
+            
+            // Handle custom selector sync
+            const select = document.getElementById("languageSelect");
+            if (item.language) {
+              select.value = item.language;
+              const opt = Array.from(select.options).find(o => o.value === item.language);
+              if (opt) document.getElementById("languageLabel").innerText = opt.text;
+            }
+            getExplanation();
+          };
+          list.appendChild(li);
+        });
+      }
+
+      function clearHistory() {
+        localStorage.removeItem("cc_history");
+        renderHistory();
+      }
+
+      function saveExplanation() {
+        if (!latestData) {
+          alert("No explanation to save yet! Please search for a term first.");
+          return;
+        }
+        const content = `Concept: ${latestData.term}\n\nExplanation:\n${latestData.explanation}\n\nReal-Life Example:\n${latestData.real_life_example}\n\nGenerated by Concept Clarity.`;
+        const blob = new Blob([content], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${latestData.term.replace(/\s+/g, '_')}_explanation.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      window.addEventListener("load", () => {
+        renderHistory();
+        const clearBtn = document.getElementById("clearHistoryBtn");
+        if (clearBtn) clearBtn.onclick = clearHistory;
+      });
+    </script>
+  </body>
+</html>
